@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t masbot/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true masbot/react-test npm test
+
+after_success:
+  - docker build -t masbot/multi-client ./client
+  - docker build -t masbot/multi-nginx ./nginx
+  - docker build -t masbot/multi-server ./server
+  - docker build -t masbot/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push masbot/multi-client
+  - docker push masbot/multi-nginx
+  - docker push masbot/multi-server
+  - docker push masbot/multi-worker
